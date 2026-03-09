@@ -1,0 +1,13 @@
+{
+  "name": "pr-php-preview-action",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:demo": "node ./scripts/build-preview.mjs --php-root ./example-app --document-root . --entrypoint index.php --output-dir ./tmp/demo-dist",
+    "lint:action": "node ./scripts/validate-action.mjs"
+  },
+  "dependencies": {
+    "php-cgi-wasm": "alpha"
+  }
+}

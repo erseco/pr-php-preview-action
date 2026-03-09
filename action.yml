@@ -1,0 +1,122 @@
+name: "PHP Wasm PR Preview"
+description: "Build and publish pull request previews for generic PHP repositories using php-cgi-wasm and GitHub Pages."
+inputs:
+  php-root:
+    description: "Path to the PHP project root to package."
+    required: false
+    default: "."
+  document-root:
+    description: "Path inside php-root that should act as the HTTP document root."
+    required: false
+    default: "."
+  entrypoint:
+    description: "PHP entrypoint inside the document root."
+    required: false
+    default: "index.php"
+  prepare-command:
+    description: "Optional shell command run in the consumer repository before packaging."
+    required: false
+    default: ""
+  preview-branch:
+    description: "Branch used by GitHub Pages previews."
+    required: false
+    default: "gh-pages"
+  umbrella-dir:
+    description: "Directory on the Pages branch where previews are stored."
+    required: false
+    default: "pr-preview"
+  pages-base-url:
+    description: "Optional GitHub Pages base URL override."
+    required: false
+    default: ""
+  pages-base-path:
+    description: "Pages deployment subdirectory, if the site is not served from repository root."
+    required: false
+    default: "."
+  comment:
+    description: "Whether to leave a sticky preview comment on the pull request."
+    required: false
+    default: "true"
+  token:
+    description: "Token with permission to push to the Pages deployment branch."
+    required: false
+    default: ""
+  action:
+    description: "Override preview behaviour. Supports auto, deploy, remove, none."
+    required: false
+    default: "auto"
+outputs:
+  preview-url:
+    description: "Published preview URL."
+    value: ${{ steps.publish.outputs.preview-url }}
+  preview-url-path:
+    description: "Path to the preview relative to the Pages site root."
+    value: ${{ steps.publish.outputs.preview-url-path }}
+  deployment-action:
+    description: "Resolved publish action."
+    value: ${{ steps.resolve.outputs.resolved-action }}
+  dist-dir:
+    description: "Temporary directory containing the generated static preview bundle."
+    value: ${{ steps.bundle-path.outputs.dist-dir }}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Resolve action
+      id: resolve
+      shell: bash
+      run: node "${{ github.action_path }}/scripts/resolve-action.mjs"
+      env:
+        INPUT_ACTION: ${{ inputs.action }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_ACTION: ${{ github.event.action }}
+
+    - name: Prepare bundle path
+      id: bundle-path
+      shell: bash
+      run: |
+        dist_dir="${RUNNER_TEMP}/php-wasm-preview-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+        mkdir -p "$dist_dir"
+        echo "dist-dir=$dist_dir" >> "$GITHUB_OUTPUT"
+
+    - name: Prepare application
+      if: ${{ steps.resolve.outputs.should-build == 'true' && inputs.prepare-command != '' }}
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: ${{ inputs.prepare-command }}
+
+    - name: Install action dependencies
+      if: ${{ steps.resolve.outputs.should-build == 'true' }}
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci
+
+    - name: Build preview bundle
+      if: ${{ steps.resolve.outputs.should-build == 'true' }}
+      shell: bash
+      run: >
+        node "${{ github.action_path }}/scripts/build-preview.mjs"
+        --php-root "${{ github.workspace }}/${{ inputs.php-root }}"
+        --document-root "${{ inputs.document-root }}"
+        --entrypoint "${{ inputs.entrypoint }}"
+        --output-dir "${{ steps.bundle-path.outputs.dist-dir }}"
+      env:
+        ACTION_ROOT: ${{ github.action_path }}
+
+    - name: Publish preview
+      id: publish
+      if: ${{ steps.resolve.outputs.resolved-action != 'none' }}
+      uses: rossjrw/pr-preview-action@v1
+      with:
+        source-dir: ${{ steps.bundle-path.outputs.dist-dir }}
+        preview-branch: ${{ inputs.preview-branch }}
+        umbrella-dir: ${{ inputs.umbrella-dir }}
+        pages-base-url: ${{ inputs.pages-base-url }}
+        pages-base-path: ${{ inputs.pages-base-path }}
+        comment: ${{ inputs.comment }}
+        token: ${{ inputs.token || github.token }}
+        action: ${{ steps.resolve.outputs.resolved-action }}
