@@ -29,6 +29,7 @@ if (!entrypointFs.startsWith(documentRootFs) || !fs.existsSync(entrypointFs)) {
 
 fs.rmSync(outputDir, { recursive: true, force: true });
 fs.mkdirSync(outputDir, { recursive: true });
+fs.writeFileSync(path.join(outputDir, '.nojekyll'), '');
 
 copyTemplate(actionRoot, outputDir, 'index.html');
 copyTemplate(actionRoot, outputDir, 'styles.css');
@@ -48,7 +49,7 @@ fs.writeFileSync(
 const workerTemplate = readTemplate(actionRoot, 'cgi-worker.mjs');
 fs.writeFileSync(path.join(outputDir, 'cgi-worker.mjs'), workerTemplate);
 
-const appSourceDir = path.join(outputDir, '__app__');
+const appSourceDir = path.join(outputDir, 'app-src');
 copyDirectory(phpRoot, appSourceDir);
 
 const manifest = buildManifest(appSourceDir);
@@ -113,7 +114,7 @@ function buildWorkerFiles(files) {
     return {
       parent: `/preload/app${parentSegments}`,
       name,
-      url: `./__app__/${file.path}`,
+      url: `./app-src/${file.path}`,
       binary: file.binary,
     };
   });
