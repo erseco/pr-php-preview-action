@@ -25,7 +25,7 @@ $cards = [
   <body>
     <main class="page">
       <section class="hero">
-        <p class="kicker">Demo Application</p>
+        <p class="kicker">TEST Demo Application</p>
         <h1>PHP rendered inside GitHub Pages.</h1>
         <p class="lede">Current time: <?= htmlspecialchars(date('c'), ENT_QUOTES, 'UTF-8') ?></p>
         <p class="lede">PHP version: <?= htmlspecialchars(PHP_VERSION, ENT_QUOTES, 'UTF-8') ?></p>
