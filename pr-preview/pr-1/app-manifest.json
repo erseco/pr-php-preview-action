@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-03-09T22:40:41.730Z",
+  "files": [
+    {
+      "path": "assets/app.css",
+      "binary": false
+    },
+    {
+      "path": "index.php",
+      "binary": false
+    },
+    {
+      "path": "info.php",
+      "binary": false
+    }
+  ]
+}
