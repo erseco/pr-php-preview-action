@@ -12,7 +12,7 @@ Reusable GitHub Action that builds and publishes pull request previews for gener
 
 Preview URLs follow the same shape as `rossjrw/pr-preview-action`, for example:
 
-`https://owner.github.io/repo/pr-preview/pr-123/`
+`https://erseco.github.io/pr-php-preview-action/pr-preview/pr-123/`
 
 ## Quick example
 
@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: your-org/pr-php-preview-action@v1
+      - uses: erseco/pr-php-preview-action@v1
         with:
           php-root: .
           document-root: public
